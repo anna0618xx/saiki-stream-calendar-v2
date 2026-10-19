@@ -1,13 +1,8 @@
 name: Saiki public feed and Pages
+# This is the archived, unused migration copy. Never run automatically.
+# The original saiki-stream-calendar handles all scheduled updates.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths-ignore:
-      - 'data/**'
-  schedule:
-    - cron: '7,22,37,52 * * * *'
-    - cron: '14 1,13 * * *'
 permissions:
   contents: write
   pages: write
