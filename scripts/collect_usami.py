@@ -6,6 +6,7 @@ import os
 import pathlib
 import urllib.parse
 import urllib.request
+import urllib.error
 
 CHANNEL_ID = "UCambvP8yxNDot4FzQc9cgiw"
 OUT = pathlib.Path("data/usami-streams.json")
@@ -15,8 +16,22 @@ BASE = "https://www.googleapis.com/youtube/v3/"
 def request(resource, **params):
     params["key"] = KEY
     url = BASE + resource + "?" + urllib.parse.urlencode(params)
-    with urllib.request.urlopen(url, timeout=35) as response:
-        return json.load(response)
+    try:
+        with urllib.request.urlopen(url, timeout=35) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as exc:
+        # Show Google's error code/message, but never print the API key or URL.
+        try:
+            payload = json.loads(exc.read().decode("utf-8"))
+            err = payload.get("error", {})
+            code = err.get("code", exc.code)
+            message = str(err.get("message", "Unknown API error"))
+            reason = ", ".join(str(v.get("reason", "")) for v in err.get("errors", []))
+        except (ValueError, UnicodeError):
+            code, message, reason = exc.code, "Unparseable API error", ""
+        # Secrets are masked by Actions, and additionally redacted here.
+        message = message.replace(KEY, "[REDACTED]") if KEY else message
+        raise RuntimeError(f"YouTube API {resource}: HTTP {code}, reason={reason}, message={message}") from None
 
 def collect_ids():
     response = request("channels", part="contentDetails", id=CHANNEL_ID)
