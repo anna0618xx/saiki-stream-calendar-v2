@@ -56,24 +56,27 @@ body{font-family:"Noto Sans JP",system-ui,-apple-system,"Yu Gothic",sans-serif;f
 .hero .catchphrase{font-weight:800;letter-spacing:.025em;background:#ffedaaac;padding:3px 9px;border-radius:7px;width:fit-content}
 .month h2{font-weight:800}.day .num{font-weight:800}.nav{font-weight:700}
 .collabMark{position:absolute;right:4px;bottom:5px;z-index:2;border-radius:5px;padding:2px 5px;font-size:10px;background:#27dce3;color:#50382a;font-weight:800;box-shadow:0 1px 4px #2d1e1840}.collabTag{display:inline-block;background:#d3f7f6;color:#396164;padding:3px 8px;font-size:11px;border-radius:7px;margin-bottom:5px;font-weight:700}.day .collabMark+.more{top:4px;bottom:auto}@media(max-width:650px){.collabMark{font-size:8px;padding:1px 3px;bottom:2px;right:2px}}
-/* Compact mobile calendar: make each day thumbnail a square tile. */
+/* Mobile layout: wider calendar, medium-height thumbnail cells, compact actions. */
 @media (max-width:650px){
+  main{max-width:none;width:100%;padding:12px 7px 35px}
+  .hero{margin:0 0 17px;padding:18px 15px;border-radius:14px}
+  .panel{margin:0 0 19px;padding:12px 7px;border-radius:14px;box-shadow:0 3px 9px #7a563017}
   .calendar{gap:3px}
   .calendar .day{
-    aspect-ratio:1 / 1;
+    aspect-ratio:auto;
+    height:clamp(61px,17vw,73px);
     min-height:0;
-    height:auto;
-    padding:2px;
+    padding:3px;
     border-radius:6px;
   }
-  .calendar .day.today{padding:0;border-width:3px}
+  .calendar .day.today{padding:1px;border-width:3px}
   .calendar .day .num{
     padding:1px 4px;
     border-radius:5px;
     font-size:10px;
     line-height:1.45;
   }
-  /* On narrow screens titles belong to the tapped day's detail list. */
+  /* Keep whole-cell thumbnail; open the day to see full stream titles. */
   .calendar .day .mark{display:none}
   .calendar .day .more{
     top:3px;right:2px;bottom:auto;
@@ -84,6 +87,22 @@ body{font-family:"Noto Sans JP",system-ui,-apple-system,"Yu Gothic",sans-serif;f
     font-size:8px;line-height:1.25;padding:2px 3px;
   }
   .calendar .weekday{padding:5px 0;border-radius:5px}
+  .top{display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:space-between;align-items:center;gap:6px;margin-bottom:11px}
+  .month{gap:5px;min-width:0;flex:0 1 auto}
+  .month h2{min-width:0;font-size:clamp(15px,4.5vw,19px);white-space:nowrap}
+  .month .nav{font-size:12px;padding:5px 8px;min-height:34px;box-shadow:0 1px 3px #6f4a2520}
+  .tools{width:auto;min-width:0;display:flex;flex:0 0 auto;flex-wrap:nowrap;justify-content:flex-end;gap:5px}
+  .tools .nav{font-size:12px;white-space:nowrap;min-height:34px;padding:5px 8px;box-shadow:0 1px 3px #6f4a2520}
+  .feedStatus{font-size:9px;margin-top:8px}
+}
+@media (max-width:350px){
+  main{padding-left:4px;padding-right:4px}
+  .panel{padding-left:5px;padding-right:5px}
+  .top{gap:3px}
+  .month{gap:3px}
+  .month h2{font-size:14px}
+  .month .nav,.tools .nav{padding:4px 6px;font-size:11px;min-height:31px}
+  .tools{gap:3px}
 }
 </style></head><body><main><header class="hero"><h1>宇佐美リト</h1><p class="catchphrase">U・S・A・M・I！宇佐美～！！</p></header><section class="panel"><div class="top"><div class="month"><button class="nav" id="prev" aria-label="前月">◀</button><h2 id="month"></h2><button class="nav" id="next" aria-label="翌月">▶</button></div><div class="tools"><button class="nav" id="todayBtn">今日</button><button class="nav add" id="addStream">＋追加</button></div></div><div class="calendar" id="calendar"></div><div class="feedStatus" id="status">データを読み込み中…</div></section><section class="panel details"><h2 id="dayLabel">⚡ 配信一覧</h2><div id="details" class="empty">日付を選択してください。</div></section><dialog id="entryDialog"><form id="entryForm"><h2 id="entryHeading">配信を手動追加</h2><label>配信日・開始時刻（日本時間）<input type="datetime-local" id="entryDate" required></label><label>配信タイトル<input type="text" id="entryTitle" maxlength="200" required></label><label>YouTube URL（他サイトのURLも可）<input type="url" id="entryURL" placeholder="https://www.youtube.com/watch?v=..." required></label><div class="formActions"><button type="button" class="nav" id="cancelEntry">キャンセル</button><button type="button" class="nav delete" id="deleteEntry" hidden>削除</button><button type="submit" class="nav add">保存</button></div><p class="hint">手動追加した配信は、このブラウザ内に保存されます。別の端末には同期されません。</p></form></dialog><footer>非公式ファン制作カレンダー。公開情報のみ掲載。配信日付は日本時間（JST）で表示します。配信予定・公開状況はYouTube側の更新により変わることがあります。<br><a href="https://www.youtube.com/@UsamiRito" target="_blank" rel="noopener noreferrer">宇佐美リト公式YouTube ↗</a></footer></main>
 <script>
