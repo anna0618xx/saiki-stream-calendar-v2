@@ -1,5 +1,10 @@
 name: Update Usami stream calendar
 on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/collect_usami.py"
+      - ".github/workflows/update-usami.yml"
   workflow_dispatch:
   schedule:
     - cron: "17 */6 * * *"
