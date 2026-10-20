@@ -120,7 +120,44 @@ dialog select{width:100%;border:1px solid #d6bc92;border-radius:9px;padding:10px
  .monthStats strong{font-size:17px}
  .monthStats small{font-size:9px;width:100%}
 }
-</style></head><body><main><header class="hero"><h1>宇佐美リト</h1><p class="catchphrase">U・S・A・M・I！宇佐美～！！</p></header><section class="panel"><div class="top"><div class="month"><button class="nav" id="prev" aria-label="前月">◀</button><h2 id="month"></h2><button class="nav" id="next" aria-label="翌月">▶</button></div><div class="tools"><button class="nav" id="todayBtn">今日</button><button class="nav add" id="addStream">＋追加</button></div></div><div class="monthStats" id="monthStats" aria-live="polite"></div><div class="calendar" id="calendar"></div><div class="feedStatus" id="status">データを読み込み中…</div></section><section class="panel details"><h2 id="dayLabel">⚡ 配信・動画一覧</h2><div id="details" class="empty">日付を選択してください。</div></section><dialog id="entryDialog"><form id="entryForm"><h2 id="entryHeading">配信を手動追加</h2><label>配信日・開始時刻（日本時間）<input type="datetime-local" id="entryDate" required></label><label>タイトル<input type="text" id="entryTitle" maxlength="200" required></label><label>種類<select id="entryKind"><option value="stream">配信</option><option value="video">通常動画</option></select></label><label>配信時間（分・任意。時間集計に反映）<input type="number" id="entryMinutes" min="1" max="20000" inputmode="numeric" placeholder="例：120"></label><label>YouTube URL（他サイトのURLも可）<input type="url" id="entryURL" placeholder="https://www.youtube.com/watch?v=..." required></label><div class="formActions"><button type="button" class="nav" id="cancelEntry">キャンセル</button><button type="button" class="nav delete" id="deleteEntry" hidden>削除</button><button type="submit" class="nav add">保存</button></div><p class="hint">手動追加した配信は、このブラウザ内に保存されます。別の端末には同期されません。</p></form></dialog><footer>非公式ファン制作カレンダー。公開情報のみ掲載。配信日付は日本時間（JST）で表示します。配信予定・公開状況はYouTube側の更新により変わることがあります。<br><a href="https://www.youtube.com/@UsamiRito" target="_blank" rel="noopener noreferrer">宇佐美リト公式YouTube ↗</a></footer></main>
+
+/* Optional Google Drive appData backup, kept below the calendar. */
+.metadataActions{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.metadataActions .nav{font-size:12px;padding:7px 12px}
+.metadataActions small{color:#806f60;font-size:11px;line-height:1.5}
+.cloudSection{padding:12px 16px}
+.cloudSection summary{cursor:pointer;font-weight:800;font-size:14px;list-style-position:inside}
+.cloudSection summary:focus-visible{outline:3px solid #28e4ec;outline-offset:4px}
+.cloudContents{display:grid;gap:11px;padding-top:12px}
+.cloudContents p{margin:0;font-size:12px;line-height:1.7;color:#715d4c}
+.cloudContents label{font-weight:700;font-size:12px;line-height:1.5}
+.cloudContents label small{font-weight:400;color:#826f61}
+.cloudContents input{width:100%;min-width:0;border:1px solid #d6bc92;border-radius:9px;background:#fff;font:inherit;font-size:12px;padding:10px}
+.cloudActions{display:flex;gap:8px;flex-wrap:wrap}
+.cloudActions .nav{font-size:12px;padding:7px 10px}
+#driveSyncState{padding-top:8px;border-top:1px solid #ead8be;font-size:11px}
+@media(max-width:650px){.cloudSection{padding:11px 12px}.cloudActions{gap:6px}.cloudActions .nav{font-size:11px;padding:6px 8px}.metadataActions small{font-size:10px}}
+</style></head><body><main><header class="hero"><h1>宇佐美リト</h1><p class="catchphrase">U・S・A・M・I！宇佐美～！！</p></header><section class="panel"><div class="top"><div class="month"><button class="nav" id="prev" aria-label="前月">◀</button><h2 id="month"></h2><button class="nav" id="next" aria-label="翌月">▶</button></div><div class="tools"><button class="nav" id="todayBtn">今日</button><button class="nav add" id="addStream">＋追加</button></div></div><div class="monthStats" id="monthStats" aria-live="polite"></div><div class="calendar" id="calendar"></div><div class="feedStatus" id="status">データを読み込み中…</div></section><section class="panel details"><h2 id="dayLabel">⚡ 配信・動画一覧</h2><div id="details" class="empty">日付を選択してください。</div></section><dialog id="entryDialog"><form id="entryForm">
+<h2 id="entryHeading">配信・動画を追加</h2>
+<label>YouTube URL（他サイトのURLも可）<input type="url" id="entryURL" placeholder="https://www.youtube.com/watch?v=..." required></label>
+<div class="metadataActions"><button type="button" class="nav" id="fetchMetadata">▶ YouTubeから取得</button><small id="metadataNote" role="status" aria-live="polite">YouTubeのURLを入力するとタイトルなどを読み込みます。</small></div>
+<label>配信日・開始時刻（日本時間）<input type="datetime-local" id="entryDate" required></label>
+<label>タイトル<input type="text" id="entryTitle" maxlength="200" required></label>
+<label>種類<select id="entryKind"><option value="stream">配信</option><option value="video">通常動画</option></select></label>
+<label>配信時間（分・任意。時間集計に反映）<input type="number" id="entryMinutes" min="1" max="20000" inputmode="numeric" placeholder="例：120"></label>
+<div class="formActions"><button type="button" class="nav" id="cancelEntry">キャンセル</button><button type="button" class="nav delete" id="deleteEntry" hidden>削除</button><button type="submit" class="nav add">保存</button></div>
+<p class="hint">端末内には自動保存。別端末に移すときは「クラウド同期」からGoogle Driveへ保存・復元できます。</p>
+</form></dialog><section class="panel cloudSection"><details id="driveSyncPanel">
+<summary>☁ クラウド同期（Google Drive）</summary>
+<div class="cloudContents">
+<p>手動追加した配信・動画を非公開のDriveアプリデータに保存・復元できます。カレンダーの公開データとは別管理です。<strong>同期は手動</strong>なので、別端末で復元する前に元の端末から保存してください。</p>
+<label for="googleClientId">Google OAuth クライアントID <small>（佐伯版と同じものが使えます）</small></label>
+<input type="text" id="googleClientId" placeholder="xxxxxxxxxxxx.apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+<div class="cloudActions"><button type="button" class="nav" id="driveConnect">Googleに接続</button><button type="button" class="nav add" id="driveUpload">Driveへ保存</button><button type="button" class="nav" id="driveDownload">Driveから復元</button></div>
+<p id="driveStatus" role="status" aria-live="polite">未接続。同期を使わなくても端末内には保存されます。</p>
+<p id="driveSyncState" role="status">☁ この端末からのDrive保存履歴なし</p>
+</div></details></section><footer>非公式ファン制作カレンダー。公開情報のみ掲載。配信日付は日本時間（JST）で表示します。配信予定・公開状況はYouTube側の更新により変わることがあります。<br><a href="https://www.youtube.com/@UsamiRito" target="_blank" rel="noopener noreferrer">宇佐美リト公式YouTube ↗</a></footer></main>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id), weekdays=['SUN','MON','TUE','WED','THU','FRI','SAT'];
