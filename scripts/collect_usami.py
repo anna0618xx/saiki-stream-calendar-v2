@@ -44,8 +44,9 @@ def collect_ids():
     playlist = channel[0]["contentDetails"]["relatedPlaylists"]["uploads"]
     ids = set()
     page = None
-    # Last ~500 uploads, covering current and historical recent months.
-    for _ in range(10):
+    # Scan up to 2,000 uploads (or stop at the end of the playlist) so older
+    # public non-live videos are included as well as recent broadcasts.
+    for _ in range(40):
         p = {"part": "contentDetails", "playlistId": playlist, "maxResults": 50}
         if page:
             p["pageToken"] = page
