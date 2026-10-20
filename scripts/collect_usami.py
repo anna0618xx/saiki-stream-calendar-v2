@@ -86,16 +86,25 @@ def wiki_candidate_ids():
             links = [a.get("href", "") for a in soup.select("a[href]")]
             # Fallback also handles Wiki markup, URL-encoded/escaped links, and
             # links embedded in script data or collapsed sections.
-            candidates = links + re.findall(r'https?[^\\s<>"\\]\\[]+', html.unescape(page))
+            candidates = links + re.findall(r'https?://[^\s<>"\]]+', html.unescape(page))
             current = set()
             for href in candidates:
                 href = urllib.parse.unquote(html.unescape(href)).replace("&amp;", "&")
-                match = re.search(
-                    r"(?:youtu\\.be/|(?:www\\.|m\\.)?youtube\\.com/(?:watch\\?[^\\s<>'\\\"]*?v=|live/|shorts/|embed/))([A-Za-z0-9_-]{11})",
-                    href,
-                )
-                if match:
-                    current.add(match.group(1))
+                try:
+                    parsed = urllib.parse.urlparse(href)
+                    host = (parsed.hostname or "").lower()
+                    video_id = ""
+                    if host in ("youtu.be", "www.youtu.be"):
+                        video_id = parsed.path.strip("/").split("/")[0]
+                    elif host in ("youtube.com", "www.youtube.com", "m.youtube.com"):
+                        if parsed.path == "/watch":
+                            video_id = urllib.parse.parse_qs(parsed.query).get("v", [""])[0]
+                        elif parsed.path.startswith(("/live/", "/shorts/", "/embed/")):
+                            video_id = parsed.path.split("/")[2]
+                    if re.fullmatch(r"[A-Za-z0-9_-]{11}", video_id):
+                        current.add(video_id)
+                except ValueError:
+                    continue
             found.update(current)
             print(f"Wiki archive {year}: {len(current)} unique YouTube IDs", flush=True)
         except Exception as exc:
