@@ -69,29 +69,38 @@ def collect_ids():
     return ids
 
 def wiki_candidate_ids():
-    """Read year-by-year live archive links, including collaborations on other channels."""
+    """Extract all public YouTube video links from Wiki yearly archive pages.
+
+    Pages may use HTML lists, folding sections or PukiWiki markup, so avoid
+    relying on row elements or a particular date regex.
+    """
     from bs4 import BeautifulSoup
     found = set()
     for year in (2023, 2024, 2025, 2026):
         url = WIKI + "/" + str(year)
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "UsamiStreamCalendar/1.0 (fan-made archive)"})
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (compatible; UsamiCalendar/1.0)"})
             with urllib.request.urlopen(req, timeout=40) as response:
-                soup = BeautifulSoup(response.read(), "html.parser")
-            count = 0
-            for row in soup.select("li, tr"):
-                text = row.get_text(" ", strip=True)
-                if not re.search(r"(?:^|\\s|[-・])(?:0?[1-9]|1[0-2])/(?:[0-2]?\\d|3[01])(?:\\s|$)", text):
-                    continue
-                for link in row.select("a[href]"):
-                    href = html.unescape(link.get("href", ""))
-                    match = re.search(r"(?:youtu\\.be/|youtube\\.com/(?:watch\\?v=|live/))([A-Za-z0-9_-]{11})", href)
-                    if match:
-                        found.add(match.group(1))
-                        count += 1
-            print(f"Wiki archive {year}: {count} video links", flush=True)
+                page = response.read().decode("utf-8", errors="replace")
+            soup = BeautifulSoup(page, "html.parser")
+            links = [a.get("href", "") for a in soup.select("a[href]")]
+            # Fallback also handles Wiki markup, URL-encoded/escaped links, and
+            # links embedded in script data or collapsed sections.
+            candidates = links + re.findall(r'https?[^\\s<>"\\]\\[]+', html.unescape(page))
+            current = set()
+            for href in candidates:
+                href = urllib.parse.unquote(html.unescape(href)).replace("&amp;", "&")
+                match = re.search(
+                    r"(?:youtu\\.be/|(?:www\\.|m\\.)?youtube\\.com/(?:watch\\?[^\\s<>'\\\"]*?v=|live/|shorts/|embed/))([A-Za-z0-9_-]{11})",
+                    href,
+                )
+                if match:
+                    current.add(match.group(1))
+            found.update(current)
+            print(f"Wiki archive {year}: {len(current)} unique YouTube IDs", flush=True)
         except Exception as exc:
             print(f"Wiki archive {year} unavailable ({type(exc).__name__}): keeping YouTube data", flush=True)
+    print(f"Wiki archive total unique IDs: {len(found)}", flush=True)
     return found
 
 def main():
