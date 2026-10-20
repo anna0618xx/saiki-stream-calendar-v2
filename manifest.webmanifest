@@ -1,0 +1,25 @@
+{
+  "name": "宇佐美リト 配信カレンダー",
+  "short_name": "宇佐美配信",
+  "description": "宇佐美リトの配信・動画の非公式月別カレンダー",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFF7E8",
+  "theme_color": "#FAC31E",
+  "icons": [
+    {
+      "src": "./assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
