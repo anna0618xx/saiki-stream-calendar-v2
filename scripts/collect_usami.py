@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect public stream metadata for Usami Rito using YouTube Data API v3."""
+"""Collect public livestreams and Usami Rito uploads via YouTube Data API v3."""
 import datetime as dt
 import json
 import os
@@ -122,23 +122,38 @@ def main():
     for ids in (list(found)[n:n+50] for n in range(0, len(found), 50)):
         data = request("videos", part="snippet,liveStreamingDetails", id=",".join(ids), maxResults=50)
         for item in data.get("items", []):
-            details = item.get("liveStreamingDetails")
-            if not details:
-                continue
             snippet = item.get("snippet", {})
-            # Include public live archives hosted by collaborators, but not non-live uploads.
-            start = details.get("actualStartTime") or details.get("scheduledStartTime")
+            channel_id = snippet.get("channelId", "")
+            is_own = channel_id == CHANNEL_ID
+            details = item.get("liveStreamingDetails") or {}
+            live_start = details.get("actualStartTime") or details.get("scheduledStartTime")
+            if live_start:
+                # Published, in-progress and scheduled livestreams on any channel.
+                kind = "stream"
+                start = live_start
+                end = details.get("actualEndTime")
+                status = "ended" if end else ("live" if details.get("actualStartTime") else "upcoming")
+            elif is_own and not details:
+                # Regular uploads (including Shorts) from Usami's own channel only.
+                # Do not import ordinary videos from unrelated Wiki-linked channels.
+                kind = "video"
+                start = snippet.get("publishedAt")
+                end = None
+                status = "published"
+            else:
+                continue
             if not start:
                 continue
-            status = "ended" if details.get("actualEndTime") else ("live" if details.get("actualStartTime") else "upcoming")
             streams[item["id"]] = {
                 "videoId": item["id"],
-                "title": snippet.get("title", "配信"),
+                "title": snippet.get("title", "動画"),
                 "start": start,
-                "end": details.get("actualEndTime"),
+                "end": end,
                 "status": status,
+                "kind": kind,
+                "channelId": channel_id,
                 "channel": snippet.get("channelTitle", ""),
-                "channelType": "self" if snippet.get("channelId") == CHANNEL_ID else "collab",
+                "channelType": "self" if is_own else "collab",
                 "source": "youtube" if item["id"] in own_ids else "nijisanji-wiki",
             }
     # Merge previously captured streams to avoid losing older history when it
@@ -158,7 +173,7 @@ def main():
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"Saved {len(output['streams'])} public livestreams")
+    print(f"Saved {len(output['streams'])} public videos (streams + regular uploads)")
 
 if __name__ == "__main__":
     main()
