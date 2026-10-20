@@ -4,6 +4,8 @@ import datetime as dt
 import json
 import os
 import pathlib
+import re
+import html
 import urllib.parse
 import urllib.request
 import urllib.error
@@ -12,6 +14,7 @@ CHANNEL_ID = "UCambvP8yxNDot4FzQc9cgiw"
 OUT = pathlib.Path("data/usami-streams.json")
 KEY = os.environ.get("YOUTUBE_API_KEY", "")
 BASE = "https://www.googleapis.com/youtube/v3/"
+WIKI = "https://wikiwiki.jp/nijisanji/" + urllib.parse.quote("宇佐美リト/動画一覧", safe="/")
 
 def request(resource, **params):
     params["key"] = KEY
@@ -65,10 +68,38 @@ def collect_ids():
                 break
     return ids
 
+def wiki_candidate_ids():
+    """Read year-by-year live archive links, including collaborations on other channels."""
+    from bs4 import BeautifulSoup
+    found = set()
+    for year in (2023, 2024, 2025, 2026):
+        url = WIKI + "/" + str(year)
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "UsamiStreamCalendar/1.0 (fan-made archive)"})
+            with urllib.request.urlopen(req, timeout=40) as response:
+                soup = BeautifulSoup(response.read(), "html.parser")
+            count = 0
+            for row in soup.select("li, tr"):
+                text = row.get_text(" ", strip=True)
+                if not re.search(r"(?:^|\\s|[-・])(?:0?[1-9]|1[0-2])/(?:[0-2]?\\d|3[01])(?:\\s|$)", text):
+                    continue
+                for link in row.select("a[href]"):
+                    href = html.unescape(link.get("href", ""))
+                    match = re.search(r"(?:youtu\\.be/|youtube\\.com/(?:watch\\?v=|live/))([A-Za-z0-9_-]{11})", href)
+                    if match:
+                        found.add(match.group(1))
+                        count += 1
+            print(f"Wiki archive {year}: {count} video links", flush=True)
+        except Exception as exc:
+            print(f"Wiki archive {year} unavailable ({type(exc).__name__}): keeping YouTube data", flush=True)
+    return found
+
 def main():
     if not KEY:
         raise RuntimeError("Set YOUTUBE_API_KEY in GitHub Actions secrets")
-    found = collect_ids()
+    own_ids = collect_ids()
+    wiki_ids = wiki_candidate_ids()
+    found = own_ids | wiki_ids
     streams = {}
     for ids in (list(found)[n:n+50] for n in range(0, len(found), 50)):
         data = request("videos", part="snippet,liveStreamingDetails", id=",".join(ids), maxResults=50)
@@ -77,8 +108,7 @@ def main():
             if not details:
                 continue
             snippet = item.get("snippet", {})
-            if snippet.get("channelId") != CHANNEL_ID:
-                continue
+            # Include public live archives hosted by collaborators, but not non-live uploads.
             start = details.get("actualStartTime") or details.get("scheduledStartTime")
             if not start:
                 continue
@@ -89,6 +119,9 @@ def main():
                 "start": start,
                 "end": details.get("actualEndTime"),
                 "status": status,
+                "channel": snippet.get("channelTitle", ""),
+                "channelType": "self" if snippet.get("channelId") == CHANNEL_ID else "collab",
+                "source": "youtube" if item["id"] in own_ids else "nijisanji-wiki",
             }
     # Merge previously captured streams to avoid losing older history when it
     # falls outside the uploads scan. Do not keep deleted/private duplicates.
