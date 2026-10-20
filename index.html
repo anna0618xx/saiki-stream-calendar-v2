@@ -199,7 +199,75 @@ $('dayLabel').textContent='⚡ '+selected.replaceAll('-','/')+' の配信・動�
 const STORAGE='usami-manual-streams-v1';let manual=[];try{manual=JSON.parse(localStorage.getItem(STORAGE)||'[]');if(!Array.isArray(manual))manual=[]}catch{manual=[]}
 let remote=[];let editing=null;
 function mergeRecords(){const known=new Set(remote.map(x=>x.videoId).filter(Boolean));items=[...remote,...manual.filter(x=>!x.videoId||!known.has(x.videoId)).map(x=>({...x,dayJst:x.localDate.slice(0,10)}))].sort((a,b)=>String(a.start).localeCompare(String(b.start)))}
-function openEntry(item){editing=item||null;$('entryHeading').textContent=item?'配信を編集':'配信を手動追加';$('entryDate').value=item?.localDate||selected+'T20:00';$('entryTitle').value=item?.title||'';$('entryKind').value=item?.kind||'stream';$('entryMinutes').value=item?.durationMinutes||'';$('entryURL').value=item?.url||'';$('deleteEntry').hidden=!item;$('entryDialog').showModal()}
+
+/* URL-assisted registration: public-feed metadata first, then public oEmbed. */
+function youtubeVideoId(raw){
+  try{
+    const url=new URL(raw),host=url.hostname.toLowerCase();
+    let id='';
+    if(['youtu.be','www.youtu.be'].includes(host))id=url.pathname.split('/')[1]||'';
+    if(['youtube.com','www.youtube.com','m.youtube.com','music.youtube.com','youtube-nocookie.com','www.youtube-nocookie.com'].includes(host))
+      id=url.searchParams.get('v')||(url.pathname.match(/^\/(?:live|shorts|embed|v)\/([A-Za-z0-9_-]{11})/)||[])[1]||'';
+    return /^[A-Za-z0-9_-]{11}$/.test(id)?id:'';
+  }catch{return ''}
+}
+function toJstLocal(iso){
+  if(!iso||!Number.isFinite(Date.parse(iso)))return '';
+  const hhmm=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tokyo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(iso));
+  return dayOf(iso)+'T'+hhmm;
+}
+let metadataSerial=0;
+async function fetchYouTubeMetadata(automatic=false){
+  const url=$('entryURL').value.trim(),id=youtubeVideoId(url);
+  if(!id){
+    if(!automatic)$('metadataNote').textContent='YouTubeの動画URLを入力してください（短縮URLにも対応）。';
+    return;
+  }
+  const serial=++metadataSerial,currentUrl=url;
+  const btn=$('fetchMetadata');
+  btn.disabled=true;$('metadataNote').textContent='YouTubeの情報を確認中…';
+  try{
+    const matched=remote.find(x=>x.videoId===id);
+    if(matched){
+      if(serial!==metadataSerial||currentUrl!==$('entryURL').value.trim())return;
+      $('entryTitle').value=matched.title||$('entryTitle').value;
+      if(matched.start)$('entryDate').value=toJstLocal(matched.start);
+      $('entryKind').value=matched.kind==='video'?'video':'stream';
+      if(matched.end&&matched.start){
+        const mins=Math.round((Date.parse(matched.end)-Date.parse(matched.start))/60000);
+        if(mins>0&&mins<=20000)$('entryMinutes').value=mins;
+      }
+      $('metadataNote').textContent='✓ タイトル・日時を取得しました。この動画は自動収集にも登録済みなので、重複追加は不要です。';
+      return;
+    }
+    let data=null;
+    const videoUrl='https://www.youtube.com/watch?v='+id;
+    for(const endpoint of [
+      'https://www.youtube.com/oembed?format=json&url='+encodeURIComponent(videoUrl),
+      'https://noembed.com/embed?url='+encodeURIComponent(videoUrl)
+    ]){
+      try{
+        const res=await fetch(endpoint,{cache:'no-store'});
+        if(!res.ok)continue;
+        const got=await res.json();
+        if(typeof got.title==='string'&&got.title.trim()){data=got;break}
+      }catch(err){console.info('Public metadata source unavailable',err)}
+    }
+    if(serial!==metadataSerial||currentUrl!==$('entryURL').value.trim())return;
+    if(!data)throw Error('metadata not available');
+    $('entryTitle').value=data.title.slice(0,200);
+    $('metadataNote').textContent='✓ タイトル取得成功'+(data.author_name?'（'+data.author_name+'）':'')+'。配信日時・時間は公開情報から確認できなかったので、必要に応じて入力してね。';
+  }catch(e){
+    if(serial===metadataSerial)$('metadataNote').textContent='自動取得できませんでした。非公開・メン限などの場合はタイトルと日時を手入力してください。';
+  }finally{
+    if(serial===metadataSerial)btn.disabled=false;
+  }
+}
+$('fetchMetadata').onclick=()=>fetchYouTubeMetadata(false);
+$('entryURL').addEventListener('change',()=>{if(!$('entryTitle').value.trim())fetchYouTubeMetadata(true)});
+$('entryURL').addEventListener('paste',()=>{setTimeout(()=>{if(!$('entryTitle').value.trim()&&youtubeVideoId($('entryURL').value))fetchYouTubeMetadata(true)},0)});
+
+function openEntry(item){editing=item||null;$('entryHeading').textContent=item?'配信・動画を編集':'配信・動画を追加';$('metadataNote').textContent='YouTubeのURLを入れるとタイトルなどを読み込みます。';metadataSerial++;$('fetchMetadata').disabled=false;$('entryDate').value=item?.localDate||selected+'T20:00';$('entryTitle').value=item?.title||'';$('entryKind').value=item?.kind||'stream';$('entryMinutes').value=item?.durationMinutes||'';$('entryURL').value=item?.url||'';$('deleteEntry').hidden=!item;$('entryDialog').showModal()}
 function saveManual(){localStorage.setItem(STORAGE,JSON.stringify(manual));mergeRecords();render()}
 $('addStream').onclick=()=>openEntry(null);$('cancelEntry').onclick=()=>$('entryDialog').close();
 $('todayBtn').onclick=()=>{view=new Date(Number(today.slice(0,4)),Number(today.slice(5,7))-1,1);selected=today;render()};
