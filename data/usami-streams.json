@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T20:50:57.457728+00:00",
+  "generatedAt": "2026-10-23T08:53:21.231366+00:00",
   "channelId": "UCambvP8yxNDot4FzQc9cgiw",
   "streams": [
     {
@@ -14012,6 +14012,18 @@
       "start": "2026-10-20T02:53:15Z",
       "end": "2026-10-20T06:28:16Z",
       "status": "ended",
+      "kind": "stream",
+      "channelId": "UCambvP8yxNDot4FzQc9cgiw",
+      "channel": "宇佐美リト / Usami Rito【にじさんじ】",
+      "channelType": "self",
+      "source": "youtube"
+    },
+    {
+      "videoId": "NwsoOAoPNbU",
+      "title": "【ONEPIECE 海のごちそうレストラン】いつもクソお世話になっております。 #1【宇佐美リト/にじさんじ】",
+      "start": "2026-10-23T07:00:49Z",
+      "end": null,
+      "status": "live",
       "kind": "stream",
       "channelId": "UCambvP8yxNDot4FzQc9cgiw",
       "channel": "宇佐美リト / Usami Rito【にじさんじ】",
