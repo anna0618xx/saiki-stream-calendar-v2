@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T20:50:58.631686+00:00",
+  "generatedAt": "2026-10-24T08:50:35.689149+00:00",
   "channelId": "UCambvP8yxNDot4FzQc9cgiw",
   "streams": [
     {
@@ -14024,6 +14024,18 @@
       "start": "2026-10-23T07:00:49Z",
       "end": "2026-10-23T11:57:56Z",
       "status": "ended",
+      "kind": "stream",
+      "channelId": "UCambvP8yxNDot4FzQc9cgiw",
+      "channel": "宇佐美リト / Usami Rito【にじさんじ】",
+      "channelType": "self",
+      "source": "youtube"
+    },
+    {
+      "videoId": "wQlOBGQDAm8",
+      "title": "【LoL】デュオランクをカゲツと【宇佐美リト/にじさんじ】",
+      "start": "2026-10-24T10:00:00Z",
+      "end": null,
+      "status": "upcoming",
       "kind": "stream",
       "channelId": "UCambvP8yxNDot4FzQc9cgiw",
       "channel": "宇佐美リト / Usami Rito【にじさんじ】",
